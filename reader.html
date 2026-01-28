@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reader</title>
+    <style>
+        .chunk {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border: 1px gray solid;
+
+            &.received {
+                background-color: green;
+            }
+
+            &.failed {
+                background-color: red;
+            }
+
+            &.pending {
+                background-color: yellow;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <button id="switch">Start/Stop</button>
+    <video id="videoEl" width="100%" height="300"></video>
+    <div id="chunks"></div>
+    <div>
+        <textarea id="result"></textarea>
+    </div>
+    <script src="reader.js" type="module"></script>
+</body>
+
+</html>
