@@ -54,7 +54,10 @@ const qrScanner = new QrScanner(
         chunkEl.classList.add('received');
 
         const content = chunk.subarray(32);
-        result.set(content, index * CHUNK_SIZE);
+        const offset = index * CHUNK_SIZE;
+        const remainingBytes = result.length - offset;
+        const bytesToWrite = Math.min(content.length, remainingBytes);
+        result.set(content.subarray(0, bytesToWrite), offset);
 
 
         for (let i = 0; i < chunks.children.length; i++) {

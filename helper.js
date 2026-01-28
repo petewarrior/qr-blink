@@ -12,8 +12,7 @@ export function bufferToHex(buffer) {
  * @returns 
  */
 export function bytesInt32ToNumber(bytes) {
-    const view = new DataView(bytes.buffer);
-    console.log(view.buffer.byteLength);
+    const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
     return view.getUint32(0, false);
 }
 

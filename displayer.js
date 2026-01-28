@@ -2,7 +2,7 @@ import QRCode from 'https://cdn.jsdelivr.net/npm/qrcode@1.5.4/+esm';
 import { CHUNK_SIZE } from './helper.js';
 
 async function hashArrayBuffer(arrayBuffer) {
-  // Use the subtle crypto API to perform a SHA-256 hash
+  // Use the subtle crypto API to perform a SHA-1 hash
   // The result is an ArrayBuffer containing the hash bytes
   const hashAsArrayBuffer = await crypto.subtle.digest("SHA-1", arrayBuffer);
 
@@ -79,11 +79,15 @@ fileInput.addEventListener("input", async () => {
   let counter = 0;
 
   const timer = setInterval(() => {
+    const chunkIndex = counter++ % chunkCount;
     QRCode.toCanvas(canvas,
-      [{ data: chunks[counter++ % chunkCount], mode: 'byte', errorCorrectionLevel: 'L' }],
+      [{ data: chunks[chunkIndex], mode: 'byte', errorCorrectionLevel: 'M' }],
       function (error) {
-        if (error) console.error(error)
-        console.log('success!');
+        if (error) {
+          console.error(error);
+        } else {
+          console.log(`Displayed chunk ${chunkIndex + 1}/${chunkCount}`);
+        }
       });
 
   }, 4000);
