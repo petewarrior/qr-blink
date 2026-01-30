@@ -1,10 +1,10 @@
 import QRCode from 'https://cdn.jsdelivr.net/npm/qrcode@1.5.4/+esm';
-import { CHUNK_SIZE, numberToBytesInt32, numberToBytesUint16, bufferToHex } from './helper.js';
+import { CHUNK_SIZE, DISPLAY_DURATION, numberToBytesInt32, numberToBytesUint16, bufferToHex } from './helper.js';
 
 async function hashArrayBuffer(arrayBuffer) {
-  // Use the subtle crypto API to perform a SHA-1 hash
-  const hashAsArrayBuffer = await crypto.subtle.digest("SHA-1", arrayBuffer);
-  return hashAsArrayBuffer;
+    // Use the subtle crypto API to perform a SHA-1 hash
+    const hashAsArrayBuffer = await crypto.subtle.digest("SHA-1", arrayBuffer);
+    return hashAsArrayBuffer;
 }
 
 function getDisplayType(mimeType) {
@@ -23,7 +23,9 @@ const headerSize = 132;
 var canvas = document.getElementById('displayer');
 
 /** @type HTMLInputElement */
-const fileInput = document.querySelector("#file");
+const fileInput = document.getElementById("file");
+
+const displayData = document.getElementById('display-file-data');
 
 /** @type Array<Uint8ClampedArray> */
 let chunks = [];
@@ -43,12 +45,18 @@ fileInput.addEventListener("input", async () => {
 
     const dataBuffer = await file.arrayBuffer();
 
-    const fileSizeBytes = numberToBytesInt32(dataBuffer.byteLength);
+    let mimeType = file.type;
+    if (!mimeType && file.name.endsWith('.svg')) {
+        mimeType = 'image/svg+xml';
+    }
+
+    const fileSize = dataBuffer.byteLength;
+    const fileSizeBytes = numberToBytesInt32(fileSize);
     const hash = await hashArrayBuffer(dataBuffer);
     const chunkCount = Math.ceil(dataBuffer.byteLength / chunkSize);
     const chunkCountBytes = numberToBytesInt32(chunkCount);
     const hashBytes = new Uint8ClampedArray(hash);
-    const mimeBytes = new TextEncoder().encode(file.type.padEnd(100, '\0'));
+    const mimeBytes = new TextEncoder().encode(mimeType.padEnd(100, '\0'));
 
 
     let chunkId = 0;
@@ -75,12 +83,19 @@ fileInput.addEventListener("input", async () => {
     const recoveredHash = firstChunk.subarray(8, 28);
     console.log('Hashes match:', bufferToHex(hash), bufferToHex(recoveredHash));
 
+    displayData.innerHTML = `
+    File size: ${fileSize} bytes (${(fileSize / 1024).toFixed(2)} kB)<br/>
+    Chunks: ${chunkCount}<br/>
+    Hash: ${bufferToHex(hash)}<br/>
+    Mime: ${mimeType}
+    `;
+
     let counter = 0;
     timer = setInterval(() => {
         const chunkIndex = counter++ % chunkCount;
         QRCode.toCanvas(canvas,
-            [{ data: chunks[chunkIndex], mode: 'byte', errorCorrectionLevel: 'M' }],
-            { width: 200 },
+            [{ data: chunks[chunkIndex], mode: 'byte', errorCorrectionLevel: 'L' }],
+            { width: 400 },
             function (error) {
                 if (error) {
                     console.error(error);
@@ -88,5 +103,5 @@ fileInput.addEventListener("input", async () => {
                     // console.log(`Displayed chunk ${chunkIndex + 1}/${chunkCount}`);
                 }
             });
-    }, 500); // Faster interval for quicker scanning
+    }, DISPLAY_DURATION); // Faster interval for quicker scanning
 });

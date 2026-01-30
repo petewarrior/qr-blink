@@ -34,4 +34,5 @@ export function bytesToNumberUint16(bytes) {
     return view.getUint16(0, false);
 }
 
-export const CHUNK_SIZE = 200;
+export const CHUNK_SIZE = 128;
+export const DISPLAY_DURATION = 100;

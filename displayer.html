@@ -35,17 +35,29 @@
         #displayer {
             border: 1px solid #ccc;
             border-radius: 4px;
+            width: auto;
+            height: 80dvh;
         }
     </style>
 </head>
 
 <body>
     <main>
-        <div id="controls">
-            <input id="file" type="file" />
-        </div>
-        <div>
-            <canvas id="displayer" width="200" height="200"></canvas>
+        <div style="display: flex; flex-direction: row; gap: 1em">
+            <div>
+                <div id="controls">
+                    <input id="file" type="file" />
+                </div>
+                <div>
+                    <canvas id="displayer" width="200" height="200"></canvas>
+                </div>
+            </div>
+            <div>
+                <div>Metadata</div>
+                <div id="display-file-data">
+
+                </div>
+            </div>
         </div>
     </main>
     <script src="displayer.js" type="module"></script>
