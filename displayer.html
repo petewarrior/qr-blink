@@ -4,16 +4,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Displayer</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            background-color: #f0f0f0;
+            color: #333;
+            margin: 0;
+            padding: 1em;
+        }
+
+        main {
+            display: flex;
+            flex-direction: column;
+            gap: 1em;
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 1em;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        #controls {
+            display: flex;
+            gap: 1em;
+            align-items: center;
+        }
+
+        #displayer {
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+    </style>
 </head>
 
 <body>
-    <div>
-        <input id="file" type="file" />
-    </div>
-    <div>
-        <canvas id="displayer" width="200" height="200"></canvas>
-    </div>
+    <main>
+        <div id="controls">
+            <input id="file" type="file" />
+        </div>
+        <div>
+            <canvas id="displayer" width="200" height="200"></canvas>
+        </div>
+    </main>
     <script src="displayer.js" type="module"></script>
 </body>
 

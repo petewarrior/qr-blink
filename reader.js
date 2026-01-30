@@ -6,8 +6,11 @@ const power = document.getElementById('switch');
 const chunks = document.getElementById('chunks');
 const videoElem = document.getElementById('videoEl');
 const resultElem = document.getElementById('result');
+const imageResultElem = document.getElementById('image-result');
+const fileResultElem = document.getElementById('file-result');
 
 let hash = null;
+let mime = null;
 
 let fileSize = 0;
 
@@ -28,7 +31,7 @@ power.addEventListener('click', () => {
 const qrScanner = new QrScanner(
     videoElem,
     res => {
-        console.log('result', res);
+        // console.log('result', res);
 
         const chunk = res.binaryData;
         if (chunks.children.length == 0) {
@@ -45,15 +48,18 @@ const qrScanner = new QrScanner(
             // get hash
             const hashArray = chunk.subarray(8, 28);
             hash = bufferToHex(hashArray);
+            // get mime
+            const mimeArray = chunk.subarray(32, 132);
+            mime = new TextDecoder('utf-8').decode(mimeArray).replace(/\0/g, '');
         }
 
         // get chunk index
         const index = bytesInt32ToNumber(chunk.subarray(0, 4));
-        console.log('index', index);
+        // console.log('index', index);
         const chunkEl = chunks.children.item(index);
         chunkEl.classList.add('received');
 
-        const content = chunk.subarray(32);
+        const content = chunk.subarray(132);
         const offset = index * CHUNK_SIZE;
         const remainingBytes = result.length - offset;
         const bytesToWrite = Math.min(content.length, remainingBytes);
@@ -67,10 +73,30 @@ const qrScanner = new QrScanner(
             }
         }
 
-        const blob = new Blob([result], { type: 'application/octet-stream' });
-        const text = new TextDecoder('utf-8').decode(result);
-        resultElem.value = text;
+        resultElem.style.display = 'none';
+        imageResultElem.style.display = 'none';
+        fileResultElem.style.display = 'none';
 
+        if (mime.startsWith('image/')) {
+            const blob = new Blob([result], { type: mime });
+            const url = URL.createObjectURL(blob);
+            imageResultElem.src = url;
+            imageResultElem.style.display = 'block';
+        } else if (mime.startsWith('text/')) {
+            const text = new TextDecoder('utf-8').decode(result);
+            resultElem.value = text;
+            resultElem.style.display = 'block';
+        } else {
+            const blob = new Blob([result], { type: mime });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `file.${mime.split('/')[1]}`;
+            a.textContent = 'Download file';
+            fileResultElem.innerHTML = '';
+            fileResultElem.appendChild(a);
+            fileResultElem.style.display = 'block';
+        }
     },
     { highlightScanRegion: true }
 );

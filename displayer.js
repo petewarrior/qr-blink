@@ -1,95 +1,92 @@
 import QRCode from 'https://cdn.jsdelivr.net/npm/qrcode@1.5.4/+esm';
-import { CHUNK_SIZE } from './helper.js';
+import { CHUNK_SIZE, numberToBytesInt32, numberToBytesUint16, bufferToHex } from './helper.js';
 
 async function hashArrayBuffer(arrayBuffer) {
   // Use the subtle crypto API to perform a SHA-1 hash
-  // The result is an ArrayBuffer containing the hash bytes
   const hashAsArrayBuffer = await crypto.subtle.digest("SHA-1", arrayBuffer);
-
   return hashAsArrayBuffer;
-
-  // Convert the hash ArrayBuffer into a usable format (e.g., hexadecimal string)
-  // const hashAsString = bufferToHex(hashAsArrayBuffer);
-  // return hashAsString;
 }
 
-// Helper function to convert an ArrayBuffer to a hexadecimal string
-function bufferToHex(buffer) {
-  return Array.from(new Uint8Array(buffer))
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
+function getDisplayType(mimeType) {
+    if (mimeType.startsWith('text/')) {
+        return 0; // Text
+    } else if (mimeType.startsWith('image/')) {
+        return 1; // Image
+    } else {
+        return 2; // File
+    }
 }
-
-function numberToBytesInt32(num) {
-  // Create an ArrayBuffer with a size of 4 bytes (32 bits)
-  const buffer = new ArrayBuffer(4);
-  // Create a DataView to interact with the buffer
-  const view = new DataView(buffer);
-
-  // Write the number as a 32-bit unsigned integer at byte offset 0, big-endian (false)
-  view.setUint32(0, num, false); // 'false' specifies big-endian; 'true' would be little-endian
-
-  // Return a Uint8Array view of the buffer
-  return new Uint8ClampedArray(buffer);
-}
-
 
 const chunkSize = CHUNK_SIZE;
+const headerSize = 132;
 
 var canvas = document.getElementById('displayer');
-var ctx = canvas.getContext('2d');
 
 /** @type HTMLInputElement */
 const fileInput = document.querySelector("#file");
-const logger = document.querySelector("#log");
 
 /** @type Array<Uint8ClampedArray> */
-const chunks = [];
+let chunks = [];
+let timer = null;
 
 fileInput.addEventListener("input", async () => {
-  const file = fileInput.files[0];
-  const dataBuffer = await file.stream().getReader().read().then((r) => r.value);
+    if (timer) {
+        clearInterval(timer);
+        timer = null;
+    }
+    chunks = [];
 
-  console.log(file.type, dataBuffer.byteLength);
-  const fileSizeBytes = numberToBytesInt32(dataBuffer.byteLength);
-  const hash = await hashArrayBuffer(dataBuffer);
-  const chunkCount = Math.ceil(dataBuffer.byteLength / chunkSize);
-  const chunkCountBytes = numberToBytesInt32(chunkCount);
-  const hashBytes = new Uint8ClampedArray(hash);
+    const file = fileInput.files[0];
+    if (!file) {
+        return;
+    }
 
-  console.log(hash, fileSizeBytes, chunkCount);
+    const dataBuffer = await file.arrayBuffer();
 
-  let chunkId = 0;
-  for (let i = 0; i < dataBuffer.byteLength; i += chunkSize) {
-    const chunk = new Uint8ClampedArray(32 + chunkSize);
-    const idx = numberToBytesInt32(chunkId);
-    chunkId++;
-    chunk.set(idx, 0);
-    chunk.set(chunkCountBytes, 4);
-    chunk.set(hashBytes, 8);
-    chunk.set(fileSizeBytes, 28);
-    chunk.set(dataBuffer.slice(i, i + chunkSize), 32);
-    chunks.push(chunk);
-  }
+    const fileSizeBytes = numberToBytesInt32(dataBuffer.byteLength);
+    const hash = await hashArrayBuffer(dataBuffer);
+    const chunkCount = Math.ceil(dataBuffer.byteLength / chunkSize);
+    const chunkCountBytes = numberToBytesInt32(chunkCount);
+    const hashBytes = new Uint8ClampedArray(hash);
+    const mimeBytes = new TextEncoder().encode(file.type.padEnd(100, '\0'));
 
-  let chunk = chunks[0];
-  const recoveredHash = chunk.subarray(8, 28);
-  console.log('hashes match', bufferToHex(hash), bufferToHex(recoveredHash), new Uint8ClampedArray(hash).every((v, i) => v === recoveredHash[i]));
 
-  let counter = 0;
+    let chunkId = 0;
+    for (let i = 0; i < dataBuffer.byteLength; i += chunkSize) {
+        const chunk = new Uint8ClampedArray(headerSize + chunkSize);
 
-  const timer = setInterval(() => {
-    const chunkIndex = counter++ % chunkCount;
-    QRCode.toCanvas(canvas,
-      [{ data: chunks[chunkIndex], mode: 'byte', errorCorrectionLevel: 'M' }],
-      function (error) {
-        if (error) {
-          console.error(error);
-        } else {
-          console.log(`Displayed chunk ${chunkIndex + 1}/${chunkCount}`);
-        }
-      });
+        // Header
+        chunk.set(numberToBytesInt32(chunkId), 0);
+        chunk.set(chunkCountBytes, 4);
+        chunk.set(hashBytes, 8);
+        chunk.set(fileSizeBytes, 28);
+        chunk.set(mimeBytes, 32);
 
-  }, 4000);
+        // Data
+        const dataSlice = dataBuffer.slice(i, i + chunkSize);
+        chunk.set(new Uint8Array(dataSlice), headerSize);
+
+        chunks.push(chunk);
+        chunkId++;
+    }
+
+    // Verification log
+    const firstChunk = chunks[0];
+    const recoveredHash = firstChunk.subarray(8, 28);
+    console.log('Hashes match:', bufferToHex(hash), bufferToHex(recoveredHash));
+
+    let counter = 0;
+    timer = setInterval(() => {
+        const chunkIndex = counter++ % chunkCount;
+        QRCode.toCanvas(canvas,
+            [{ data: chunks[chunkIndex], mode: 'byte', errorCorrectionLevel: 'M' }],
+            { width: 200 },
+            function (error) {
+                if (error) {
+                    console.error(error);
+                } else {
+                    // console.log(`Displayed chunk ${chunkIndex + 1}/${chunkCount}`);
+                }
+            });
+    }, 500); // Faster interval for quicker scanning
 });
-
