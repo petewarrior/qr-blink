@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Displayer</title>
+    <title>QR-Blink Demo</title>
     <style>
         body {
             font-family: sans-serif;
@@ -36,7 +36,7 @@
             border: 1px solid #ccc;
             border-radius: 4px;
             width: auto;
-            height: 80dvh;
+            height: 400px;
         }
     </style>
 </head>
@@ -49,18 +49,32 @@
                     <input id="file" type="file" />
                 </div>
                 <div>
-                    <canvas id="displayer" width="200" height="200"></canvas>
+                    <canvas id="displayer" width="300" height="300"></canvas>
                 </div>
             </div>
             <div>
-                <div>Metadata</div>
+                <h2>Metadata</h2>
                 <div id="display-file-data">
 
                 </div>
+                <h2>About this project</h2>
+                <p>Inspired by the <a href="https://www.youtube.com/watch?v=64EAfXsX828" target="_blank">Timex
+                        Datalink</a> from 1994, but using modern QR codes.</a></p>
+                <div>How to use this:
+                    <ol>
+                        <li>Scan this QR code to open the viewer <strong>from your mobile device</strong> or open <a
+                                href="#" target="_blank" id="domain"></a><br />
+                            <canvas id="mobile-site-qr" width="200" height="200"></canvas>
+                        </li>
+                        <li>Press the Start button on the mobile site and scan the QR code on the left until all the
+                            squares turn green</li>
+                    </ol>
+                    <div></div>
+                </div>
             </div>
-        </div>
     </main>
-    <script src="displayer.js" type="module"></script>
+    <script src="/displayer/displayer.js" type="module"></script>
+    <script src="/demo/demo.js" type="module"></script>
 </body>
 
 </html>

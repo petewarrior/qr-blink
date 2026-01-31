@@ -1,5 +1,5 @@
 import QRCode from 'https://cdn.jsdelivr.net/npm/qrcode@1.5.4/+esm';
-import { CHUNK_SIZE, DISPLAY_DURATION, numberToBytesInt32, numberToBytesUint16, bufferToHex } from './helper.js';
+import { CHUNK_SIZE, DISPLAY_DURATION, numberToBytesInt32, numberToBytesUint16, bufferToHex } from '../helper.js';
 
 async function hashArrayBuffer(arrayBuffer) {
     // Use the subtle crypto API to perform a SHA-1 hash
